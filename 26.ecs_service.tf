@@ -7,7 +7,7 @@ resource "aws_ecs_service" "ecs-service" {                                    #E
   health_check_grace_period_seconds = 180                                     #헬스체크 상태 확인 실패 무시 시간
 
   network_configuration {                                       #네트워크 구성 
-    subnets          = [aws_subnet.puba.id, aws_subnet.pubc.id] #서브넷 
+    subnets          = [aws_subnet.ecsa.id, aws_subnet.ecsc.id] #서브넷 
     security_groups  = [aws_security_group.sg.id]               #보안 그룹
     assign_public_ip = false                                    #공용 IP 할당 
   }
