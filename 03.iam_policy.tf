@@ -5,26 +5,8 @@ resource "aws_iam_policy" "codebuild-policy" {
     "Version" : "2012-10-17",
     "Statement" : [
       {
-        "Sid" : "ListImagesInRepository",
         "Effect" : "Allow",
-        "Action" : [
-          "ecr:ListImages"
-        ],
-        "Resource" : [
-          "arn:aws:ecr:ap-northeast-2:${local.account_id}:repository/${var.ecr}"
-        ]
-      },
-      {
-        "Sid" : "GetAuthorizationToken",
-        "Effect" : "Allow",
-        "Action" : [
-          "ecr:GetAuthorizationToken"
-        ],
-        "Resource" : "*"
-      },
-      {
-        "Sid" : "ManageRepositoryContents",
-        "Effect" : "Allow",
+        "Resource" : "arn:aws:ecr:ap-northeast-2:${local.account_id}:repository/${var.ecr}"
         "Action" : [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
@@ -36,37 +18,41 @@ resource "aws_iam_policy" "codebuild-policy" {
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
-          "ecr:PutImage",
-          "s3:*",
-          "s3-object-lambda:*",
-          "cloudwatch:DescribeAlarmsForMetric",
-          "cloudwatch:GetMetricData",
-          "ec2:DescribeAvailabilityZones",
-          "ec2:DescribeNetworkInterfaceAttribute",
-          "ec2:DescribeNetworkInterfaces",
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeVpcAttribute",
-          "ec2:DescribeVpcs",
-          "elasticfilesystem:DescribeAccountPreferences",
-          "elasticfilesystem:DescribeBackupPolicy",
-          "elasticfilesystem:DescribeFileSystems",
-          "elasticfilesystem:DescribeFileSystemPolicy",
-          "elasticfilesystem:DescribeLifecycleConfiguration",
-          "elasticfilesystem:DescribeMountTargets",
-          "elasticfilesystem:DescribeMountTargetSecurityGroups",
-          "elasticfilesystem:DescribeTags",
-          "elasticfilesystem:DescribeAccessPoints",
-          "elasticfilesystem:DescribeReplicationConfigurations",
-          "elasticfilesystem:ListTagsForResource",
-          "kms:ListAliases"
-        ],
-        "Resource" : [
-          "*",
+          "ecr:PutImage"
         ]
       },
       {
-        "Sid" : "CloudWatchLogsAccessPolicy",
+        "Effect": "Allow",
+        "Action": [
+          "ecr:GetAuthorizationToken"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Resource": [
+            "arn:aws:s3:::${var.s3}*"
+        ],
+        "Action": [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:GetBucketAcl",
+            "s3:GetBucketLocation"
+        ]
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "cloudwatch:DescribeAlarmsForMetric",
+          "cloudwatch:GetMetricData",
+        ],
+        "Resource" : [
+          "arn:aws:logs:ap-northeast-2:${local.account_id}:log-group:/aws/codebuild/${var.project}",
+          "arn:aws:logs:ap-northeast-2:${local.account_id}:log-group:/aws/codebuild/${var.project}:*",
+        ]
+      },
+      {
         "Effect" : "Allow",
         "Action" : [
           "logs:CreateLogGroup",
@@ -83,95 +69,44 @@ resource "aws_iam_policy" "codebuild-policy" {
   }
 }
 
-resource "aws_iam_policy" "codedeploy-policy" {
-  name = "CodeDeploy-Policy"
+# CodePipeline IAM Policy
+## Codestar-connections을 사용할 수 있도록 codestar-connections:UseConnection 허용
+## 아티팩트 스토어로 S3 버킷을 사용할 수 있도록 S3에 대해 객체 목록, 쓰기, 읽기, 권한 허용
+## CodeBuild를 사용할 수 있도록 CodeBuild 사용 허용
+## CodeDeploy를 사용할 수 있도록 CodeDeploy 사용 허용
+## ECS에 배포할 수 있도록 ECS 작업 정의 등록 허용
+## ECS가 작업을 수행할 수 있도록 
+resource "aws_iam_policy" "codepipeline-policy" {
+  name = "CodePipeline-policy"
   policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
       {
         "Action" : [
-          "ecs:DescribeServices",
-          "ecs:CreateTaskSet",
-          "ecs:UpdateServicePrimaryTaskSet",
-          "ecs:DeleteTaskSet",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:ModifyListener",
-          "elasticloadbalancing:DescribeRules",
-          "elasticloadbalancing:ModifyRule",
-          "lambda:InvokeFunction",
-          "cloudwatch:DescribeAlarms",
-          "sns:Publish",
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:DescribeRepositories",
-          "ecr:ListImages",
-          "ecr:DescribeImages",
-          "ecr:BatchGetImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:PutImage"
+          "codestar-connections:UseConnection"
         ],
         "Resource" : "*",
         "Effect" : "Allow"
       },
       {
         "Action" : [
-          "iam:PassRole"
-        ],
-        "Effect" : "Allow",
-        "Resource" : "*",
-        "Condition" : {
-          "StringLike" : {
-            "iam:PassedToService" : [
-              "ecs-tasks.amazonaws.com"
-            ]
-          }
-        }
-      }
-    ]
-  })
-}
-
-data "aws_iam_policy" "AmazonECSTaskExecutionRolePolicy" {
-  arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-resource "aws_iam_policy" "codepipeline-policy" {
-  name = "CodePipeline-Policy"
-
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Action" : [
-          "iam:PassRole"
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:ListBucket",
+          "s3:GetObjectVersion",
+          "s3:GetObject",
+          "s3:GetBucketLocation"
+          
         ],
         "Resource" : "*",
-        "Effect" : "Allow",
-        "Condition" : {
-          "StringEqualsIfExists" : {
-            "iam:PassedToService" : [
-              "cloudformation.amazonaws.com",
-              "elasticbeanstalk.amazonaws.com",
-              "ec2.amazonaws.com",
-              "ecs-tasks.amazonaws.com"
-            ]
-          }
-        }
+        "Effect" : "Allow"
       },
       {
         "Action" : [
-          "codecommit:CancelUploadArchive",
-          "codecommit:GetBranch",
-          "codecommit:GetCommit",
-          "codecommit:GetRepository",
-          "codecommit:GetUploadArchiveStatus",
-          "codecommit:UploadArchive"
+          "codebuild:BatchGetBuilds",
+          "codebuild:StartBuild",
+          "codebuild:BatchGetBuildBatches",
+          "codebuild:StartBuildBatch"
         ],
         "Resource" : "*",
         "Effect" : "Allow"
@@ -190,130 +125,24 @@ resource "aws_iam_policy" "codepipeline-policy" {
       },
       {
         "Action" : [
-          "codestar-connections:UseConnection"
+          "ecs:RegisterTaskDefinition"
         ],
         "Resource" : "*",
         "Effect" : "Allow"
       },
       {
         "Action" : [
-          "elasticbeanstalk:*",
-          "ec2:*",
-          "elasticloadbalancing:*",
-          "autoscaling:*",
-          "cloudwatch:*",
-          "s3:*",
-          "sns:*",
-          "cloudformation:*",
-          "rds:*",
-          "sqs:*",
-          "ecs:*"
+          "iam:PassRole"
         ],
         "Resource" : "*",
-        "Effect" : "Allow"
-      },
-      {
-        "Action" : [
-          "lambda:InvokeFunction",
-          "lambda:ListFunctions"
-        ],
-        "Resource" : "*",
-        "Effect" : "Allow"
-      },
-      {
-        "Action" : [
-          "opsworks:CreateDeployment",
-          "opsworks:DescribeApps",
-          "opsworks:DescribeCommands",
-          "opsworks:DescribeDeployments",
-          "opsworks:DescribeInstances",
-          "opsworks:DescribeStacks",
-          "opsworks:UpdateApp",
-          "opsworks:UpdateStack"
-        ],
-        "Resource" : "*",
-        "Effect" : "Allow"
-      },
-      {
-        "Action" : [
-          "cloudformation:CreateStack",
-          "cloudformation:DeleteStack",
-          "cloudformation:DescribeStacks",
-          "cloudformation:UpdateStack",
-          "cloudformation:CreateChangeSet",
-          "cloudformation:DeleteChangeSet",
-          "cloudformation:DescribeChangeSet",
-          "cloudformation:ExecuteChangeSet",
-          "cloudformation:SetStackPolicy",
-          "cloudformation:ValidateTemplate"
-        ],
-        "Resource" : "*",
-        "Effect" : "Allow"
-      },
-      {
-        "Action" : [
-          "codebuild:BatchGetBuilds",
-          "codebuild:StartBuild",
-          "codebuild:BatchGetBuildBatches",
-          "codebuild:StartBuildBatch"
-        ],
-        "Resource" : "*",
-        "Effect" : "Allow"
-      },
-      {
         "Effect" : "Allow",
-        "Action" : [
-          "devicefarm:ListProjects",
-          "devicefarm:ListDevicePools",
-          "devicefarm:GetRun",
-          "devicefarm:GetUpload",
-          "devicefarm:CreateUpload",
-          "devicefarm:ScheduleRun"
-        ],
-        "Resource" : "*"
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "servicecatalog:ListProvisioningArtifacts",
-          "servicecatalog:CreateProvisioningArtifact",
-          "servicecatalog:DescribeProvisioningArtifact",
-          "servicecatalog:DeleteProvisioningArtifact",
-          "servicecatalog:UpdateProduct"
-        ],
-        "Resource" : "*"
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "cloudformation:ValidateTemplate"
-        ],
-        "Resource" : "*"
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "ecr:DescribeImages"
-        ],
-        "Resource" : "*"
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "states:DescribeExecution",
-          "states:DescribeStateMachine",
-          "states:StartExecution"
-        ],
-        "Resource" : "*"
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "appconfig:StartDeployment",
-          "appconfig:StopDeployment",
-          "appconfig:GetDeployment"
-        ],
-        "Resource" : "*"
+        "Condition" : {
+          "StringEqualsIfExists" : {
+            "iam:PassedToService" : [
+              "ecs-tasks.amazonaws.com"
+            ]
+          }
+        }
       }
     ]
   })

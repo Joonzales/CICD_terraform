@@ -29,7 +29,7 @@ resource "aws_ecs_task_definition" "ecs-taskdef" {                    #ECS 작�
       volumesFrom : [],                                                                        #컨테이너에서 마운트할 데이터 볼륨 
       image : "${local.account_id}.dkr.ecr.ap-northeast-2.amazonaws.com/projectrepository:v1", #컨테이너 사용이미지
       name : "app"                                                                             #컨테이너 네임 
-      memory : null                                                                            #컨테이너에 표시할 메모리 양 
+      memory : null                                                                            #컨테이너에 표시할 메모리 양 (하드 메모리) 
       compatibilities : [
         "EC2",
         "FARGATE"

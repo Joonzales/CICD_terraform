@@ -19,7 +19,7 @@ variable "key-pair" {
 # Key Pair Location
 variable "key-path" {
   type    = string
-  default = "../../.ssh/hjjeong.pub"
+  default = "../Key/hjjeong.pub"
 }
 
 # CIDR-Block
@@ -28,11 +28,11 @@ variable "cidr-block" {
   default = {
     vpc  = "100.0.0.0/16"
     puba = "100.0.0.0/24"
-    pubc = "100.0.5.0/24"
-    ecsa = "100.0.1.0/24"
-    ecsc = "100.0.2.0/24"
-    dba  = "100.0.3.0/24"
-    dbc  = "100.0.4.0/24"
+    pubc = "100.0.1.0/24"
+    ecsa = "100.0.2.0/24"
+    ecsc = "100.0.3.0/24"
+    dba  = "100.0.4.0/24"
+    dbc  = "100.0.5.0/24"
     all  = "0.0.0.0/0"
   }
 }
@@ -59,7 +59,7 @@ variable "blue-port" {
   default = 80
 }
 variable "green-port" {
-  default = 10080
+  default = 8080
 }
 variable "mysql-port" {
   default = 3306
@@ -68,37 +68,75 @@ variable "mysql-port" {
 # EC2
 variable "ami" {
   type    = string
-  default = "ami-01711d925a1e4cc3a"
+  default = "ami-0c76973fbe0ee100c"
 }
 variable "instance_type" {
   type    = string
   default = "t2.micro"
 }
 
+#RDS
+variable "db-storage-size" {
+  default = 20
+}
+variable "db-engine" {
+  type    = string
+  default = "mysql"
+}
+variable "db-engine-version" {
+  type    = string
+  default = "5.7"
+}
+variable "db-instance" {
+  type    = string
+  default = "db.t2.micro"
+}
+variable "db-identifier" {
+  type    = string
+  default = "wordpress"
+}
+variable "db-name" {
+  type    = string
+  default = "wordpress"
+}
+variable "db-user" {
+  type    = string
+  default = "root"
+}
+variable "db-password" {
+  type    = string
+  default = "It12345!"
+}
+variable "db-parameter" {
+  type    = string
+  default = "default.mysql5.7"
+}
+
+
 # ALB Health Check
+variable "health-protocol" {
+  type    = string
+  default = "HTTP"
+}
 variable "health-check-path" {
   type    = string
   default = "/"
 }
 variable "health-threshold-check" {
-  default = 3
+  default = 5
+}
+variable "health-unhealthy" {
+  default = 2
+}
+variable "health-timeout" {
+  default = 5
 }
 variable "health-interval-check" {
-  default = 5
+  default = 30
 }
 variable "health-matcher" {
   type    = string
   default = "200"
-}
-variable "health-protocol" {
-  type    = string
-  default = "HTTP"
-}
-variable "health-timeout" {
-  default = 2
-}
-variable "health-unhealthy" {
-  default = 3
 }
 variable "health-port" {
   type    = string
@@ -124,7 +162,7 @@ variable "ecr" {
 # Project Name
 variable "project" {
   type    = string
-  default = "Project"
+  default = "3team"
 }
 
 # ECS Task Definition
@@ -200,39 +238,3 @@ variable "min" {
   default = 2
 }
 
-#RDS
-variable "db-storage-size" {
-  default = 20
-}
-variable "db-engine" {
-  type    = string
-  default = "mysql"
-}
-variable "db-engine-version" {
-  type    = string
-  default = "5.7"
-}
-variable "db-instance" {
-  type    = string
-  default = "db.t2.micro"
-}
-variable "db-identifier" {
-  type    = string
-  default = "wordpress"
-}
-variable "db-name" {
-  type    = string
-  default = "wordpress"
-}
-variable "db-user" {
-  type    = string
-  default = "root"
-}
-variable "db-password" {
-  type    = string
-  default = "It12345!"
-}
-variable "db-parameter" {
-  type    = string
-  default = "default.mysql5.7"
-}
